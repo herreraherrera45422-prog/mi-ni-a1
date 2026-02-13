@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ff6b8a" />
+  <title>Nuestro Amor 💖</title>
+  <meta name="description" content="Una página romántica de San Valentín con árbol de corazones, contador de amor y detalles delicados." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --pink:#ff6b8a;
+      --soft-pink:#ff9bb0;
+      --rose:#ff3d68;
+      --red:#e63946;
+      --white:#fff;
+      --bg1:#ffe5ec;
+      --bg2:#ffd1dc;
+      --bg3:#fff1f4;
+      --shadow:0 10px 30px rgba(255, 59, 95, .25);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:#4a2b2b; background: linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));
+      font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, 'Helvetica Neue', Arial, 'Apple Color Emoji','Segoe UI Emoji';
+      overflow-x:hidden;
+    }
+
+    /* Floating background hearts */
+    .bg-hearts{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:1}
+    .bg-hearts span{
+      position:absolute; display:block; width:14px; height:14px; background:var(--rose);
+      transform: rotate(45deg) scale(0.9); opacity:.12; animation: floatUp linear forwards;
+      filter: blur(0.3px)
+    }
+    .bg-hearts span::before,.bg-hearts span::after{
+      content:""; position:absolute; width:100%; height:100%; background:inherit; border-radius:50%;
+    }
+    .bg-hearts span::before{ top:-50% }
+    .bg-hearts span::after{ left:-50% }
+    @keyframes floatUp{
+      0%{ transform:translateY(100vh) rotate(45deg) scale(0.6); opacity:.0 }
+      10%{ opacity:.15 }
+      100%{ transform:translateY(-20vh) rotate(45deg) scale(1); opacity:.0 }
+    }
+
+    .wrapper{
+      min-height:100dvh; display:grid; place-items:center; position:relative; z-index:2;
+      padding:24px; isolation:isolate;
+    }
+
+    .card{
+      width:min(100%, 980px); background:rgba(255,255,255,.6); backdrop-filter: blur(8px);
+      border-radius:28px; box-shadow: var(--shadow);
+      padding: clamp(16px, 4vw, 28px); text-align:center; position:relative;
+      border:1px solid rgba(255, 105, 130, .25);
+    }
+
+    .title{
+      font-family:'Great Vibes', cursive; font-size: clamp(36px, 6vw, 68px);
+      color:#c2185b; margin:6px 0 2px; letter-spacing:1px;
+      text-shadow: 0 2px 0 rgba(255,255,255,.7), 0 6px 24px rgba(194,24,91,.2);
+    }
+    .subtitle{ font-size: clamp(14px, 2.8vw, 18px); color:#8a4556; margin-top:0 }
+
+    /* Tree container */
+    .scene{
+      position:relative; width:100%; height:min(60vh, 540px); max-height:62dvh; margin: 10px auto 0;
+      display:grid; place-items:center;
+    }
+    canvas#treeCanvas{
+      width: min(95%, 720px); height: 100%; max-width:800px; border-radius:18px;
+      background: radial-gradient(120% 100% at 50% 100%, rgba(255,255,255,.65) 0%, rgba(255,255,255,.35) 60%, rgba(255,255,255,.2) 100%);
+      box-shadow: inset 0 0 0 1px rgba(255,105,130,.15);
+    }
+
+    /* Timer */
+    .timer{
+      margin: 18px auto 6px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;
+    }
+    .timer .unit{
+      background: linear-gradient(180deg, #fff, #ffe6ec); padding:10px 14px; border-radius:14px; min-width:90px;
+      box-shadow: var(--shadow); border:1px solid rgba(255,105,130,.25);
+    }
+    .timer .value{ font-size: clamp(18px, 4vw, 26px); color:#d32f57; font-weight:600 }
+    .timer .label{ font-size: 12px; letter-spacing:.5px; color:#9a5f6c }
+
+    /* Buttons */
+    .actions{ margin-top: 12px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap }
+    .btn{
+      border:0; padding:10px 16px; border-radius:999px; cursor:pointer; font-weight:600; letter-spacing:.3px;
+      background: linear-gradient(90deg, var(--pink), var(--soft-pink)); color:white; box-shadow: var(--shadow);
+      display:inline-flex; gap:8px; align-items:center; transition: transform .15s ease, box-shadow .3s ease;
+    }
+    .btn:hover{ transform: translateY(-2px) }
+    .btn.secondary{ background: linear-gradient(90deg, #fff, #ffe9ef); color:#c2185b; border:1px solid rgba(255,105,130,.35) }
+
+    .footer{ margin-top:16px; font-size:12px; color:#a16472 }
+
+    /* Responsive helpers */
+    @media (max-width:520px){
+      .timer .unit{ min-width: calc(50% - 8px) }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-hearts" id="bgHearts" aria-hidden="true"></div>
+  <div class="wrapper">
+    <main class="card" role="main" aria-label="Carta de amor">
+      <h1 class="title">Nuestro Amor por Siempre</h1>
+      <p class="subtitle">“Tú eres mi hoy, mi mañana y cada uno de mis latidos.”</p>
+
+      <section class="scene" aria-label="Árbol del amor con corazones animados">
+        <canvas id="treeCanvas" width="1200" height="800"></canvas>
+      </section>
+
+      <section class="timer" id="timer" aria-live="polite" aria-label="Contador de tiempo de nuestra relación">
+        <div class="unit"><div class="value" id="years">0</div><div class="label">Años</div></div>
+        <div class="unit"><div class="value" id="months">0</div><div class="label">Meses</div></div>
+        <div class="unit"><div class="value" id="days">0</div><div class="label">Días</div></div>
+        <div class="unit"><div class="value" id="hours">0</div><div class="label">Horas</div></div>
+        <div class="unit"><div class="value" id="minutes">0</div><div class="label">Minutos</div></div>
+        <div class="unit"><div class="value" id="seconds">0</div><div class="label">Segundos</div></div>
+      </section>
+
+      <div class="actions">
+        <button class="btn" id="playMusic" aria-label="Reproducir música romántica">🎵 Reproducir Música</button>
+        <button class="btn secondary" id="toggleHearts" aria-label="Alternar corazones flotantes">💗 Corazones</button>
+      </div>
+
+      <p class="footer">Hecho con amor 💘</p>
+    </main>
+  </div>
+
+  <!-- Música ligera y romántica (libre) -->
+  <audio id="bgAudio" preload="auto" crossorigin="anonymous">
+    <source src="https://pixabay.com/es/music/cl%c3%a1sico-moderno-pictures-of-memories-148564/" type="audio/mpeg" />
+  </audio>
+
+  <script>
+    // Configuración
+    const START_DATE = new Date(2024, 8, 11, 0, 0, 0); // 11/9/2024 (mes 8 porque enero=0)
+
+    // Utilidad para mapear tamaños al canvas responsivo
+    function resizeCanvasToDisplaySize(canvas){
+      const {width, height} = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const displayWidth = Math.max(300, Math.floor(width * dpr));
+      const displayHeight = Math.max(240, Math.floor(height * dpr));
+      if (canvas.width !== displayWidth || canvas.height !== displayHeight){
+        canvas.width = displayWidth; canvas.height = displayHeight; return true;
+      }
+      return false;
+    }
+
+    // Árbol romántico en canvas + corazones creciendo
+    class LoveTree{
+      constructor(canvas){
+        this.canvas = canvas; this.ctx = canvas.getContext('2d');
+        this.branches = []; this.hearts = []; this.time = 0; this.spawnRate = 0.0075; // prob por frame (reducida)
+        this.baseColor = '#7a4a3b';
+        this.heartPalette = ['#ff3d68', '#ff6b8a', '#ff9bb0', '#e63946'];
+        this.init();
+        window.addEventListener('resize', () => this.layout());
+      }
+      init(){
+        this.layout();
+        // Rama principal
+        this.branches = [this.makeBranch(this.baseX, this.baseY, -Math.PI/2, this.scale*110, 10)];
+      }
+      layout(){
+        resizeCanvasToDisplaySize(this.canvas);
+        const {width:w, height:h} = this.canvas;
+        this.w=w; this.h=h; this.scale = Math.min(w, h)/800; // escala base respecto a diseño 1200x800
+        this.baseX = w/2; this.baseY = h*0.95;
+      }
+      makeBranch(x,y,angle,len,depth){
+        return {x,y,angle,len,depth,progress:0, children:[], finished:false}
+      }
+      update(){
+        this.time += 1;
+        // crecer ramas
+        const growSpeed = 0.008; // suavidad
+        for(const b of this.branches){
+          if(!b.finished){
+            b.progress = Math.min(1, b.progress + growSpeed);
+            if(b.progress >= 1 && b.depth>0 && !b.spawned){
+              b.spawned = true;
+              const n = 2 + Math.round(Math.random());
+              for(let i=0;i<n;i++){
+                const ang = b.angle + (Math.random()*0.9 - 0.45);
+                const len = b.len * (0.6 + Math.random()*0.18);
+                const child = this.makeBranch(
+                  b.x + Math.cos(b.angle)*b.len,
+                  b.y + Math.sin(b.angle)*b.len,
+                  ang, len, b.depth-1
+                );
+                this.branches.push(child);
+                b.children.push(child);
+              }
+            } else if(b.progress >= 1 && b.depth===0){
+              b.finished = true;
+            }
+          }
+          // corazones nacen en puntas
+          if(Math.random()<this.spawnRate*(b.depth<3?0.9:0.45)){
+            const t = b.progress; const px = b.x + Math.cos(b.angle)*b.len*t; const py = b.y + Math.sin(b.angle)*b.len*t;
+            this.hearts.push(this.makeHeart(px, py));
+          }
+        }
+        // actualizar corazones
+        for(const h of this.hearts){
+          h.vy -= 0.0006; h.vx += (Math.random()-0.5)*0.002; h.life += 1;
+          h.x += h.vx * this.w; h.y += h.vy * this.h;
+          if(h.life>h.maxLife) h.dead=true;
+        }
+        this.hearts = this.hearts.filter(h=>!h.dead);
+      }
+      makeHeart(x,y){
+        const s = this.scale*(0.8 + Math.random()*1.4);
+        return {
+          x, y, s,
+          color: this.heartPalette[(Math.random()*this.heartPalette.length)|0],
+          vx: (Math.random()-0.5)*0.002,
+          vy: -0.002 - Math.random()*0.004,
+          life: 0, maxLife: 400 + (Math.random()*300|0)
+        }
+      }
+      drawBranch(b){
+        const ctx = this.ctx; ctx.save();
+        ctx.strokeStyle = this.baseColor; ctx.lineWidth = Math.max(1, b.depth + 1) * this.scale * 2;
+        ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(b.x,b.y);
+        const ex = b.x + Math.cos(b.angle)*b.len*b.progress;
+        const ey = b.y + Math.sin(b.angle)*b.len*b.progress;
+        ctx.lineTo(ex,ey); ctx.stroke();
+        ctx.restore();
+      }
+      drawHeart(h){
+        const ctx = this.ctx; ctx.save();
+        ctx.translate(h.x, h.y); const t = Math.min(1, h.life/30);
+        const scale = h.s*(0.6+0.4*t) * (1 + 0.06*Math.sin(h.life/10));
+        ctx.scale(scale, scale); ctx.rotate(Math.sin(h.life/25)*0.25);
+        ctx.globalAlpha = 0.85 * (1 - Math.min(1, h.life/h.maxLife));
+        ctx.fillStyle = h.color; ctx.beginPath();
+        // corazón vectorial (dos círculos + triángulo redondeado)
+        ctx.moveTo(0,0);
+        ctx.bezierCurveTo(0,-6, -8,-10, -14,-6);
+        ctx.bezierCurveTo(-22,0, -18,10, 0,20);
+        ctx.bezierCurveTo(18,10, 22,0, 14,-6);
+        ctx.bezierCurveTo(8,-10, 0,-6, 0,0);
+        ctx.closePath(); ctx.fill(); ctx.restore();
+      }
+      render(){
+        const ctx = this.ctx; ctx.clearRect(0,0,this.w,this.h);
+        // suelo suave
+        const grd = ctx.createRadialGradient(this.w/2, this.h*0.98, this.h*0.05, this.w/2, this.h, this.h*0.25);
+        grd.addColorStop(0,'rgba(255,255,255,.9)'); grd.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.fillStyle = grd; ctx.fillRect(0,0,this.w,this.h);
+
+        for(const b of this.branches) this.drawBranch(b);
+        for(const h of this.hearts) this.drawHeart(h);
+      }
+      tick(){ this.update(); this.render(); requestAnimationFrame(()=>this.tick()); }
+    }
+
+    // Corazones de fondo flotantes
+    function setupFloatingHearts(container){
+      const max = 40; let enabled = true; let id = 0; const spans=[];
+      function spawn(){
+        if(!enabled) return;
+        if(spans.length < max){
+          const s = document.createElement('span');
+          const size = 8 + Math.random()*18; s.style.width = size+'px'; s.style.height = size+'px';
+          s.style.left = Math.random()*100 + 'vw';
+          s.style.animationDuration = 18 + Math.random()*18 + 's';
+          s.style.animationDelay = (-Math.random()*20) + 's';
+          s.style.opacity = 0.08 + Math.random()*0.1;
+          container.appendChild(s); spans.push(s);
+        }
+        id = requestAnimationFrame(spawn);
+      }
+      function toggle(){ enabled = !enabled; if(enabled){ spawn(); container.style.opacity='1' } else { container.style.opacity='.0' } }
+      spawn();
+      return { toggle };
+    }
+
+    // Contador preciso: años, meses, días, horas, minutos, segundos
+    function diffYMDHMS(from, to){
+      let y = to.getFullYear() - from.getFullYear();
+      let m = to.getMonth() - from.getMonth();
+      let d = to.getDate() - from.getDate();
+      let H = to.getHours() - from.getHours();
+      let M = to.getMinutes() - from.getMinutes();
+      let S = to.getSeconds() - from.getSeconds();
+
+      if(S<0){ S+=60; M--; }
+      if(M<0){ M+=60; H--; }
+      if(H<0){ H+=24; d--; }
+      if(d<0){
+        const pm = new Date(to.getFullYear(), to.getMonth(), 0).getDate();
+        d += pm; m--;
+      }
+      if(m<0){ m+=12; y--; }
+      return {years:y, months:m, days:d, hours:H, minutes:M, seconds:S};
+    }
+
+    function startTimer(){
+      const y = document.getElementById('years');
+      const mo = document.getElementById('months');
+      const d = document.getElementById('days');
+      const h = document.getElementById('hours');
+      const mi = document.getElementById('minutes');
+      const s = document.getElementById('seconds');
+      function tick(){
+        const now = new Date();
+        const t = diffYMDHMS(START_DATE, now);
+        y.textContent=t.years; mo.textContent=t.months; d.textContent=t.days; h.textContent=t.hours; mi.textContent=t.minutes; s.textContent=t.seconds;
+      }
+      tick(); setInterval(tick, 1000);
+    }
+
+    // Música
+    function setupMusic(){
+      const btn = document.getElementById('playMusic'); const audio = document.getElementById('bgAudio');
+      let playing=false;
+      function update(){ btn.textContent = playing ? '⏸️ Pausar Música' : '🎵 Reproducir Música'; }
+      btn.addEventListener('click', async ()=>{
+        try{
+          if(!playing){ await audio.play(); playing=true; } else { audio.pause(); playing=false; }
+          update();
+        }catch(e){ alert('Para reproducir música, interactúa con la página.'); }
+      });
+      audio.addEventListener('ended', ()=>{ playing=false; update(); });
+      audio.volume = 0.5; update();
+    }
+
+    // Toggle corazones de fondo
+    function setupToggle(bg){
+      const btn = document.getElementById('toggleHearts');
+      btn.addEventListener('click', ()=>{
+        bg.toggle();
+        btn.classList.toggle('secondary');
+      });
+    }
+
+    // Init
+    window.addEventListener('DOMContentLoaded', ()=>{
+      const canvas = document.getElementById('treeCanvas');
+      const tree = new LoveTree(canvas); tree.tick();
+      const bg = setupFloatingHearts(document.getElementById('bgHearts'));
+      setupToggle(bg);
+      startTimer();
+      setupMusic();
+    });
+  </script>
+</body>
+</html>
